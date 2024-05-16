@@ -16,6 +16,7 @@ from config import (
     INITIAL_ALIEN_SPEED,
     INITIAL_PROJECTILE_SPEED,
 )
+import pygame
 
 
 class Game:
@@ -100,6 +101,7 @@ class Game:
         self.screen.onkey(self.spaceship.move_left, "Left")
         self.screen.onkey(self.spaceship.move_right, "Right")
         self.screen.onkey(self.spaceship.shoot, "space")
+        self.screen.onkey(self.quit_game, "q")  # Add keypress for quitting the game
 
     def create_aliens(self):
         aliens = []
@@ -221,6 +223,10 @@ class Game:
         self.projectile_speed *= 1.2
         self.reset_game()
         self.run()
+
+    def quit_game(self):
+        self.screen.bye()
+        pygame.quit()
 
     def hide_objects(self):
         self.spaceship.hideturtle()
