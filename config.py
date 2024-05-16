@@ -1,0 +1,11 @@
+# Configuration settings
+
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
+SHIP_SPEED = 20
+ALIEN_SPEED = 5  # Adjusted for visible movement
+PROJECTILE_SPEED = 20
+BARRIER_POSITION = [(0, -200), (-200, -200), (200, -200)]
+ALIEN_ROWS = 3
+ALIEN_COLUMNS = 8
+ALIEN_MOVE_INTERVAL = 1  # seconds
