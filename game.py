@@ -6,31 +6,45 @@ from scoreboard import Scoreboard
 from projectile import Projectile
 import time
 from config import (
-    SCREEN_WIDTH,
     SCREEN_HEIGHT,
     ALIEN_ROWS,
     ALIEN_COLUMNS,
     BARRIER_POSITION,
     ALIEN_MOVE_INTERVAL,
+    INITIAL_ALIEN_SPEED,
+    INITIAL_PROJECTILE_SPEED,
 )
 
 
 class Game:
     def __init__(self, screen):
         self.screen = screen
+        self.alien_speed = INITIAL_ALIEN_SPEED
+        self.projectile_speed = INITIAL_PROJECTILE_SPEED
+        self.scoreboard = Scoreboard()  # Initialize scoreboard once
+        self.last_alien_move_time = time.time()
+        self.reset_game()
+
+    def reset_game(self):
+        self.is_game_over = False
+        self.scoreboard.reset_position()
         self.spaceship = Spaceship()
         self.aliens = self.create_aliens()
         self.barriers = self.create_barriers()
-        self.projectiles = []
+        self.spaceship.projectiles = []
         self.alien_projectiles = []
-        self.scoreboard = Scoreboard()
-        self.is_game_over = False
+        self.scoreboard.reset_score()  # Reset the score
+
+        self.screen.listen()
+        self.screen.onkey(self.spaceship.move_left, "Left")
+        self.screen.onkey(self.spaceship.move_right, "Right")
+        self.screen.onkey(self.spaceship.shoot, "space")
 
     def create_aliens(self):
         aliens = []
         for row in range(ALIEN_ROWS):
             for col in range(ALIEN_COLUMNS):
-                alien = Alien()
+                alien = Alien(self.alien_speed)
                 alien.goto(col * 50 - 250, row * 30 + 150)
                 aliens.append(alien)
         return aliens
@@ -43,10 +57,16 @@ class Game:
         while not self.is_game_over:
             self.screen.update()
             time.sleep(0.02)  # Update the screen every 20ms
-            self.move_aliens()
+            current_time = time.time()
+            if current_time - self.last_alien_move_time >= ALIEN_MOVE_INTERVAL:
+                self.move_aliens()
+                self.last_alien_move_time = current_time
             self.move_projectiles()
             self.check_collisions()
             self.alien_shoot()
+            if not self.aliens:
+                self.is_game_over = True
+                self.game_over()
 
     def move_aliens(self):
         for alien in self.aliens:
@@ -118,5 +138,26 @@ class Game:
             self.alien_projectiles.append(projectile)
 
     def game_over(self):
-        self.scoreboard.goto(0, 0)
-        self.scoreboard.write("GAME OVER", align="center", font=("Arial", 36, "normal"))
+        self.scoreboard.show_game_over()
+        self.screen.onkey(self.restart, "r")
+        self.screen.listen()
+
+    def restart(self):
+        self.hide_objects()
+        self.alien_speed *= 1.2
+        self.projectile_speed *= 1.2
+        self.reset_game()
+        self.run()
+
+    def hide_objects(self):
+        self.spaceship.hideturtle()
+        for alien in self.aliens:
+            alien.hideturtle()
+        for barrier in self.barriers:
+            barrier.hideturtle()
+        for projectile in self.spaceship.projectiles:
+            projectile.hideturtle()
+        for projectile in self.alien_projectiles:
+            projectile.hideturtle()
+        self.spaceship.projectiles.clear()
+        self.alien_projectiles.clear()
