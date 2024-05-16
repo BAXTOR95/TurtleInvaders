@@ -3,6 +3,7 @@ from alien import Alien
 from barrier import Barrier
 from scoreboard import Scoreboard
 from projectile import Projectile
+from sound_manager import SoundManager
 from PIL import Image
 import time
 import os
@@ -20,12 +21,15 @@ from config import (
 class Game:
     def __init__(self, screen):
         self.screen = screen
+        self.sound_manager = SoundManager()
         self.alien_speed = INITIAL_ALIEN_SPEED
         self.projectile_speed = INITIAL_PROJECTILE_SPEED
         self.scoreboard = Scoreboard()  # Initialize scoreboard once
         self.last_alien_move_time = time.time()
         self.load_assets()
         self.reset_game()
+        self.load_sounds()
+        self.play_background_music()
 
     def load_assets(self):
         self.spaceship_frames = self.extract_frames("assets/spaceship.gif", "spaceship")
@@ -67,10 +71,25 @@ class Game:
                 frames.append(frame_path)
         return frames
 
+    def load_sounds(self):
+        self.sound_manager.load_sound("shoot", "assets/sounds/shoot.wav")
+        self.sound_manager.load_sound("alien_hit", "assets/sounds/alien_hit.wav")
+        self.sound_manager.load_sound("barrier_hit", "assets/sounds/barrier_hit.wav")
+        self.sound_manager.load_sound("alien_shoot", "assets/sounds/alien_shoot.wav")
+        self.sound_manager.load_sound("game_over", "assets/sounds/game_over.wav")
+        self.sound_manager.load_sound(
+            "background_music", "assets/sounds/background_music.wav", volume=0.3
+        )
+
+    def play_background_music(self):
+        self.sound_manager.play_sound("background_music")
+
     def reset_game(self):
         self.is_game_over = False
         self.scoreboard.reset_position()
-        self.spaceship = Spaceship(self.spaceship_frames, self.projectile_frames)
+        self.spaceship = Spaceship(
+            self.spaceship_frames, self.projectile_frames, self.sound_manager
+        )
         self.aliens = self.create_aliens()
         self.barriers = self.create_barriers()
         self.spaceship.projectiles = []
@@ -138,12 +157,14 @@ class Game:
                     projectile.hideturtle()
                     self.spaceship.projectiles.remove(projectile)
                     self.scoreboard.increase_score()
+                    self.sound_manager.play_sound("alien_hit")
                     break
 
             for barrier in self.barriers:
                 if projectile.distance(barrier) < 20:
                     projectile.hideturtle()
                     self.spaceship.projectiles.remove(projectile)
+                    self.sound_manager.play_sound("barrier_hit")
                     break
 
         for projectile in self.alien_projectiles:
@@ -156,6 +177,7 @@ class Game:
                 if projectile.distance(barrier) < 20:
                     projectile.hideturtle()
                     self.alien_projectiles.remove(projectile)
+                    self.sound_manager.play_sound("barrier_hit")
                     break
 
             for player_projectile in self.spaceship.projectiles:
@@ -185,9 +207,11 @@ class Game:
                 frames=self.projectile_frames,
             )
             self.alien_projectiles.append(projectile)
+            self.sound_manager.play_sound("alien_shoot")
 
     def game_over(self):
         self.scoreboard.show_game_over()
+        self.sound_manager.play_sound("game_over")
         self.screen.onkey(self.restart, "r")
         self.screen.listen()
 

@@ -5,10 +5,11 @@ import time
 
 
 class Spaceship(Turtle):
-    def __init__(self, frames, projectile_frames):
+    def __init__(self, frames, projectile_frames, sound_manager):
         super().__init__()
         self.frames = frames
         self.projectile_frames = projectile_frames
+        self.sound_manager = sound_manager
         self.frame_index = 0
         self.shape(self.frames[self.frame_index])
         self.penup()
@@ -34,6 +35,7 @@ class Spaceship(Turtle):
                 self.xcor(), self.ycor(), frames=self.projectile_frames
             )
             self.projectiles.append(projectile)
+            self.sound_manager.play_sound("shoot")
             self.last_shot_time = current_time
 
     def update_animation(self):
