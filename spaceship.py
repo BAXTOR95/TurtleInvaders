@@ -5,10 +5,12 @@ import time
 
 
 class Spaceship(Turtle):
-    def __init__(self):
+    def __init__(self, frames, projectile_frames):
         super().__init__()
-        self.shape("triangle")
-        self.color("white")
+        self.frames = frames
+        self.projectile_frames = projectile_frames
+        self.frame_index = 0
+        self.shape(self.frames[self.frame_index])
         self.penup()
         self.goto(0, -250)
         self.setheading(90)
@@ -28,6 +30,12 @@ class Spaceship(Turtle):
     def shoot(self):
         current_time = time.time()
         if current_time - self.last_shot_time >= SHOOT_DELAY:
-            projectile = Projectile(self.xcor(), self.ycor())
+            projectile = Projectile(
+                self.xcor(), self.ycor(), frames=self.projectile_frames
+            )
             self.projectiles.append(projectile)
             self.last_shot_time = current_time
+
+    def update_animation(self):
+        self.frame_index = (self.frame_index + 1) % len(self.frames)
+        self.shape(self.frames[self.frame_index])

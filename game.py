@@ -1,10 +1,11 @@
-from turtle import Screen
 from spaceship import Spaceship
 from alien import Alien
 from barrier import Barrier
 from scoreboard import Scoreboard
 from projectile import Projectile
+from PIL import Image
 import time
+import os
 from config import (
     SCREEN_HEIGHT,
     ALIEN_ROWS,
@@ -23,12 +24,53 @@ class Game:
         self.projectile_speed = INITIAL_PROJECTILE_SPEED
         self.scoreboard = Scoreboard()  # Initialize scoreboard once
         self.last_alien_move_time = time.time()
+        self.load_assets()
         self.reset_game()
+
+    def load_assets(self):
+        self.spaceship_frames = self.extract_frames("assets/spaceship.gif", "spaceship")
+        self.alien_frames = self.extract_frames("assets/alien.gif", "alien")
+        self.projectile_frames = self.extract_frames(
+            "assets/projectile.gif", "projectile"
+        )
+        self.barrier_frames = self.extract_frames("assets/barrier.gif", "barrier")
+        self.background_frames = self.extract_frames(
+            "assets/background.gif", "background"
+        )
+
+        for frame in self.spaceship_frames:
+            self.screen.register_shape(frame)
+        for frame in self.alien_frames:
+            self.screen.register_shape(frame)
+        for frame in self.projectile_frames:
+            self.screen.register_shape(frame)
+        for frame in self.barrier_frames:
+            self.screen.register_shape(frame)
+        for frame in self.background_frames:
+            self.screen.register_shape(frame)
+
+        # Set the initial background frame
+        self.screen.bgpic(self.background_frames[0])
+
+    def extract_frames(self, gif_path, name_prefix):
+        frames_dir = os.path.join("assets", "frames")
+        os.makedirs(frames_dir, exist_ok=True)
+        frames = []
+        with Image.open(gif_path) as img:
+            for frame in range(img.n_frames):
+                img.seek(frame)
+                frame_image = img.copy().convert("RGBA")
+                frame_path = os.path.join(
+                    frames_dir, f"{name_prefix}_frame_{frame}.gif"
+                )
+                frame_image.save(frame_path)
+                frames.append(frame_path)
+        return frames
 
     def reset_game(self):
         self.is_game_over = False
         self.scoreboard.reset_position()
-        self.spaceship = Spaceship()
+        self.spaceship = Spaceship(self.spaceship_frames, self.projectile_frames)
         self.aliens = self.create_aliens()
         self.barriers = self.create_barriers()
         self.spaceship.projectiles = []
@@ -44,13 +86,13 @@ class Game:
         aliens = []
         for row in range(ALIEN_ROWS):
             for col in range(ALIEN_COLUMNS):
-                alien = Alien(self.alien_speed)
+                alien = Alien(self.alien_speed, self.alien_frames)
                 alien.goto(col * 50 - 250, row * 30 + 150)
                 aliens.append(alien)
         return aliens
 
     def create_barriers(self):
-        barriers = [Barrier(pos) for pos in BARRIER_POSITION]
+        barriers = [Barrier(pos, self.barrier_frames) for pos in BARRIER_POSITION]
         return barriers
 
     def run(self):
@@ -64,6 +106,8 @@ class Game:
             self.move_projectiles()
             self.check_collisions()
             self.alien_shoot()
+            self.update_animations()
+            self.update_background()
             if not self.aliens:
                 self.is_game_over = True
                 self.game_over()
@@ -134,7 +178,12 @@ class Game:
             self.aliens and randint(1, 100) <= 5
         ):  # 5% chance per frame for any alien to shoot
             shooter = choice(self.aliens)
-            projectile = Projectile(shooter.xcor(), shooter.ycor(), direction=-1)
+            projectile = Projectile(
+                shooter.xcor(),
+                shooter.ycor(),
+                direction=-1,
+                frames=self.projectile_frames,
+            )
             self.alien_projectiles.append(projectile)
 
     def game_over(self):
@@ -161,3 +210,18 @@ class Game:
             projectile.hideturtle()
         self.spaceship.projectiles.clear()
         self.alien_projectiles.clear()
+
+    def update_animations(self):
+        self.spaceship.update_animation()
+        for alien in self.aliens:
+            alien.update_animation()
+        for projectile in self.spaceship.projectiles:
+            projectile.update_animation()
+        for projectile in self.alien_projectiles:
+            projectile.update_animation()
+        for barrier in self.barriers:
+            barrier.update_animation()
+
+    def update_background(self):
+        frame_index = int(time.time() * 10) % len(self.background_frames)
+        self.screen.bgpic(self.background_frames[frame_index])
