@@ -31,6 +31,7 @@ class Game:
         self.reset_game()
         self.load_sounds()
         self.play_background_music()
+        self.can_restart = False
 
     def load_assets(self):
         self.spaceship_frames = self.extract_frames("assets/spaceship.gif", "spaceship")
@@ -96,6 +97,7 @@ class Game:
         self.spaceship.projectiles = []
         self.alien_projectiles = []
         self.scoreboard.reset_score()  # Reset the score
+        self.can_restart = False
 
         self.screen.listen()
         self.screen.onkey(self.spaceship.move_left, "Left")
@@ -214,15 +216,17 @@ class Game:
     def game_over(self):
         self.scoreboard.show_game_over()
         self.sound_manager.play_sound("game_over")
+        self.can_restart = True
         self.screen.onkey(self.restart, "r")
         self.screen.listen()
 
     def restart(self):
-        self.hide_objects()
-        self.alien_speed *= 1.2
-        self.projectile_speed *= 1.2
-        self.reset_game()
-        self.run()
+        if self.can_restart:
+            self.hide_objects()
+            self.alien_speed *= 1.2
+            self.projectile_speed *= 1.2
+            self.reset_game()
+            self.run()
 
     def quit_game(self):
         self.screen.bye()
