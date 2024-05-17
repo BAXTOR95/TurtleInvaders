@@ -20,7 +20,26 @@ import pygame
 
 
 class Game:
+    """
+    The main game class that handles the overall game logic.
+
+    Attributes:
+        screen (Screen): The turtle screen where the game is displayed.
+        sound_manager (SoundManager): The manager for game sounds.
+        alien_speed (float): The initial speed of the aliens.
+        projectile_speed (float): The initial speed of the projectiles.
+        scoreboard (Scoreboard): The game scoreboard.
+        last_alien_move_time (float): The last time the aliens moved.
+        can_restart (bool): Flag to indicate if the game can be restarted.
+    """
+
     def __init__(self, screen):
+        """
+        Initializes the game with the given screen.
+
+        Args:
+            screen (Screen): The turtle screen where the game is displayed.
+        """
         self.screen = screen
         self.sound_manager = SoundManager()
         self.alien_speed = INITIAL_ALIEN_SPEED
@@ -34,6 +53,7 @@ class Game:
         self.can_restart = False
 
     def load_assets(self):
+        """Loads all game assets including frames for animations."""
         self.spaceship_frames = self.extract_frames("assets/spaceship.gif", "spaceship")
         self.alien_frames = self.extract_frames("assets/alien.gif", "alien")
         self.projectile_frames = self.extract_frames(
@@ -44,21 +64,28 @@ class Game:
             "assets/background.gif", "background"
         )
 
-        for frame in self.spaceship_frames:
-            self.screen.register_shape(frame)
-        for frame in self.alien_frames:
-            self.screen.register_shape(frame)
-        for frame in self.projectile_frames:
-            self.screen.register_shape(frame)
-        for frame in self.barrier_frames:
-            self.screen.register_shape(frame)
-        for frame in self.background_frames:
+        for frame in (
+            self.spaceship_frames
+            + self.alien_frames
+            + self.projectile_frames
+            + self.barrier_frames
+            + self.background_frames
+        ):
             self.screen.register_shape(frame)
 
-        # Set the initial background frame
-        self.screen.bgpic(self.background_frames[0])
+        self.screen.bgpic(self.background_frames[0])  # Set the initial background frame
 
     def extract_frames(self, gif_path, name_prefix):
+        """
+        Extracts frames from a GIF and saves them as separate images.
+
+        Args:
+            gif_path (str): The path to the GIF file.
+            name_prefix (str): The prefix for the frame image filenames.
+
+        Returns:
+            list: A list of file paths to the extracted frames.
+        """
         frames_dir = os.path.join("assets", "frames")
         os.makedirs(frames_dir, exist_ok=True)
         frames = []
@@ -74,6 +101,7 @@ class Game:
         return frames
 
     def load_sounds(self):
+        """Loads all game sounds."""
         self.sound_manager.load_sound("shoot", "assets/sounds/shoot.wav")
         self.sound_manager.load_sound("alien_hit", "assets/sounds/alien_hit.wav")
         self.sound_manager.load_sound("barrier_hit", "assets/sounds/barrier_hit.wav")
@@ -84,9 +112,11 @@ class Game:
         )
 
     def play_background_music(self):
+        """Plays the background music for the game."""
         self.sound_manager.play_sound("background_music")
 
     def reset_game(self):
+        """Resets the game state for a new game or level."""
         self.is_game_over = False
         self.is_level_complete = False
         self.scoreboard.reset_position()
@@ -105,6 +135,12 @@ class Game:
         self.screen.onkey(self.quit_game, "q")  # Add keypress for quitting the game
 
     def create_aliens(self):
+        """
+        Creates and positions the aliens on the screen.
+
+        Returns:
+            list: A list of Alien objects.
+        """
         aliens = []
         for row in range(ALIEN_ROWS):
             for col in range(ALIEN_COLUMNS):
@@ -114,10 +150,16 @@ class Game:
         return aliens
 
     def create_barriers(self):
-        barriers = [Barrier(pos, self.barrier_frames) for pos in BARRIER_POSITION]
-        return barriers
+        """
+        Creates and positions the barriers on the screen.
+
+        Returns:
+            list: A list of Barrier objects.
+        """
+        return [Barrier(pos, self.barrier_frames) for pos in BARRIER_POSITION]
 
     def run(self):
+        """Main game loop."""
         while not self.is_game_over and not self.is_level_complete:
             self.screen.update()
             time.sleep(0.02)  # Update the screen every 20ms
@@ -135,10 +177,12 @@ class Game:
                 self.level_complete()
 
     def move_aliens(self):
+        """Moves all aliens on the screen."""
         for alien in self.aliens:
             alien.move()
 
     def move_projectiles(self):
+        """Moves all projectiles on the screen and removes them if they go out of bounds."""
         for projectile in self.spaceship.projectiles:
             projectile.move()
             if projectile.ycor() > SCREEN_HEIGHT / 2:
@@ -152,6 +196,7 @@ class Game:
                 self.alien_projectiles.remove(projectile)
 
     def check_collisions(self):
+        """Checks for and handles collisions between projectiles, aliens, barriers, and the spaceship."""
         for projectile in self.spaceship.projectiles:
             for alien in self.aliens:
                 if projectile.distance(alien) < 20:
@@ -197,6 +242,7 @@ class Game:
                 self.game_over()
 
     def alien_shoot(self):
+        """Handles the shooting logic for the aliens."""
         from random import choice, randint
 
         if (
@@ -213,6 +259,7 @@ class Game:
             self.sound_manager.play_sound("alien_shoot")
 
     def game_over(self):
+        """Handles the game over logic."""
         self.scoreboard.show_game_over()
         self.sound_manager.play_sound("game_over")
         self.can_restart = True
@@ -220,6 +267,7 @@ class Game:
         self.screen.listen()
 
     def level_complete(self):
+        """Handles the logic for completing a level."""
         self.hide_objects()
         self.alien_speed *= 1.2
         self.projectile_speed *= 1.2
@@ -228,6 +276,7 @@ class Game:
         self.run()
 
     def restart(self):
+        """Restarts the game if allowed."""
         if self.can_restart:
             self.hide_objects()
             self.scoreboard.reset_score()
@@ -237,11 +286,13 @@ class Game:
             self.run()
 
     def quit_game(self):
+        """Quits the game and saves the high score."""
         self.scoreboard.save_high_score()
         self.screen.bye()
         pygame.quit()
 
     def hide_objects(self):
+        """Hides all objects on the screen."""
         self.spaceship.hideturtle()
         for alien in self.aliens:
             alien.hideturtle()
@@ -255,6 +306,7 @@ class Game:
         self.alien_projectiles.clear()
 
     def update_animations(self):
+        """Updates the animations for all objects."""
         self.spaceship.update_animation()
         for alien in self.aliens:
             alien.update_animation()
@@ -266,5 +318,6 @@ class Game:
             barrier.update_animation()
 
     def update_background(self):
+        """Updates the background animation."""
         frame_index = int(time.time() * 10) % len(self.background_frames)
         self.screen.bgpic(self.background_frames[frame_index])
