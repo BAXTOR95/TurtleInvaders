@@ -88,6 +88,7 @@ class Game:
 
     def reset_game(self):
         self.is_game_over = False
+        self.is_level_complete = False
         self.scoreboard.reset_position()
         self.spaceship = Spaceship(
             self.spaceship_frames, self.projectile_frames, self.sound_manager
@@ -96,8 +97,6 @@ class Game:
         self.barriers = self.create_barriers()
         self.spaceship.projectiles = []
         self.alien_projectiles = []
-        self.scoreboard.reset_score()  # Reset the score
-        self.can_restart = False
 
         self.screen.listen()
         self.screen.onkey(self.spaceship.move_left, "Left")
@@ -119,7 +118,7 @@ class Game:
         return barriers
 
     def run(self):
-        while not self.is_game_over:
+        while not self.is_game_over and not self.is_level_complete:
             self.screen.update()
             time.sleep(0.02)  # Update the screen every 20ms
             current_time = time.time()
@@ -132,8 +131,8 @@ class Game:
             self.update_animations()
             self.update_background()
             if not self.aliens:
-                self.is_game_over = True
-                self.game_over()
+                self.is_level_complete = True
+                self.level_complete()
 
     def move_aliens(self):
         for alien in self.aliens:
@@ -220,15 +219,25 @@ class Game:
         self.screen.onkey(self.restart, "r")
         self.screen.listen()
 
+    def level_complete(self):
+        self.hide_objects()
+        self.alien_speed *= 1.2
+        self.projectile_speed *= 1.2
+        self.scoreboard.save_high_score()
+        self.reset_game()
+        self.run()
+
     def restart(self):
         if self.can_restart:
             self.hide_objects()
-            self.alien_speed *= 1.2
-            self.projectile_speed *= 1.2
+            self.scoreboard.reset_score()
+            self.alien_speed = INITIAL_ALIEN_SPEED
+            self.projectile_speed = INITIAL_PROJECTILE_SPEED
             self.reset_game()
             self.run()
 
     def quit_game(self):
+        self.scoreboard.save_high_score()
         self.screen.bye()
         pygame.quit()
 

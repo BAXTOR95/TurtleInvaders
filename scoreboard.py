@@ -34,8 +34,9 @@ class Scoreboard(Turtle):
         self.update_scoreboard()
 
     def save_high_score(self):
-        with open("high_score.txt", "w") as file:
-            file.write(str(self.high_score))
+        if self.score > self.high_score:
+            with open("high_score.txt", "w") as file:
+                file.write(str(self.score))
 
     def load_high_score(self):
         if os.path.exists("high_score.txt"):
