@@ -5,8 +5,10 @@ from scoreboard import Scoreboard
 from projectile import Projectile
 from sound_manager import SoundManager
 from PIL import Image
+from _tkinter import TclError
 import time
 import os
+import sys
 from config import (
     SCREEN_HEIGHT,
     ALIEN_ROWS,
@@ -160,21 +162,24 @@ class Game:
 
     def run(self):
         """Main game loop."""
-        while not self.is_game_over and not self.is_level_complete:
-            self.screen.update()
-            time.sleep(0.02)  # Update the screen every 20ms
-            current_time = time.time()
-            if current_time - self.last_alien_move_time >= ALIEN_MOVE_INTERVAL:
-                self.move_aliens()
-                self.last_alien_move_time = current_time
-            self.move_projectiles()
-            self.check_collisions()
-            self.alien_shoot()
-            self.update_animations()
-            self.update_background()
-            if not self.aliens:
-                self.is_level_complete = True
-                self.level_complete()
+        try:
+            while not self.is_game_over and not self.is_level_complete:
+                self.screen.update()
+                time.sleep(0.02)  # Update the screen every 20ms
+                current_time = time.time()
+                if current_time - self.last_alien_move_time >= ALIEN_MOVE_INTERVAL:
+                    self.move_aliens()
+                    self.last_alien_move_time = current_time
+                self.move_projectiles()
+                self.check_collisions()
+                self.alien_shoot()
+                self.update_animations()
+                self.update_background()
+                if not self.aliens:
+                    self.is_level_complete = True
+                    self.level_complete()
+        except TclError:
+            sys.exit(1)
 
     def move_aliens(self):
         """Moves all aliens on the screen."""
